@@ -1,9 +1,9 @@
 {
-  "name": "koajs-example-starter",
-  "description": "Starting point for apps based on the Koa web framework.",
+  "name": "TwitterAnalyserApi",
+  "description": "API that peforms data analysis and storage on Twitter tweets.",
   "author": {
-    "name": "Bogdan Luca",
-    "email": "bogdan@codesandbox.io"
+    "name": "Joshua Prichard",
+    "email": "joshuawprichard@gmail.com"
   },
   "version": "1.0.0",
   "license": "GPL-3.0",
@@ -36,9 +36,5 @@
     "typeorm": "0.3.6",
     "typescript": "4.6.4"
   },
-  "keywords": [
-    "koa",
-    "nodejs",
-    "koajs"
-  ]
+  "keywords": ["koa", "nodejs", "koajs"]
 }
