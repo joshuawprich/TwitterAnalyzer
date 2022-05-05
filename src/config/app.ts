@@ -1,13 +1,12 @@
 import * as Koa from "koa";
-import * as Router from "koa-router";
 import * as logger from "koa-logger";
 import * as bodyParser from "koa-bodyparser";
 import HttpStatus from "http-status-codes";
 
-const PORT = process.env.PORT || 8000;
+import indexController from "../routes/index.controller";
+import routeController from "../routes/test.controller";
 
 const app: Koa = new Koa();
-const router = new Router();
 
 //Generic error handling
 app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
@@ -25,9 +24,10 @@ app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
 app.use(logger());
 app.use(bodyParser());
 
-// Initial route
-app.use(async (ctx: Koa.Context) => {
-  ctx.body = "Hello world";
-});
+// Routes
+app.use(indexController.routes());
+app.use(indexController.allowedMethods());
+app.use(routeController.routes());
+app.use(routeController.allowedMethods());
 
 export default app;
