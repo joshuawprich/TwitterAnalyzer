@@ -1,41 +1,52 @@
 import * as Koa from "koa";
 import * as Router from "koa-router";
 import axios from "axios";
+import HttpStatus from "http-status-codes";
 
 require("dotenv").config();
 
-const token = `Bearer ${process.env.TWITTER_BEARER_TOKEN}`;
+const token: string = process.env.TWITTER_BEARER_TOKEN;
 
 const routerOpts: Router.IRouterOptions = {
   prefix: "/tweets"
 };
 
-const url = "https://api.twitter.com/2/tweets/1228393702244134912";
+const baseURL: string = "https://api.twitter.com/2/tweets/";
 
 const router: Router = new Router(routerOpts);
 
-var config = {
-  method: "get",
-  url: url,
-  headers: {
-    Authorization: token
-  }
-};
+async function getTweet(tweetID: string | string[]) {
+  let url: string = baseURL + tweetID;
 
-//async function getRequest() {}
+  var config = {
+    method: "get",
+    url: url,
+    headers: {
+      Authorization: token
+    }
+  };
 
-router.get("/", async (ctx: Koa.Context) => {
-  let d = await axios(config)
+  return await axios(config)
     .then(function (response) {
       let data = JSON.stringify(response.data);
-      console.log(data);
-      return data;
+      if (response.data.errors) {
+        return "error";
+      } else {
+        return data;
+      }
     })
     .catch(function (error) {
       console.log(error);
     });
+}
 
-  ctx.body = d;
+//async function getRequest() {}
+
+router.get("/", async (ctx: Koa.Context) => {
+  let response = await getTweet(ctx.query.tweetID);
+
+  console.log(response);
+  ctx.body = response;
 });
 
 export default router;
