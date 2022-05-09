@@ -4,7 +4,9 @@ import * as bodyParser from "koa-bodyparser";
 import HttpStatus from "http-status-codes";
 
 import indexController from "../routes/index.controller";
-import routeController from "../routes/test.controller";
+import routeController from "../routes/tweets.controller";
+
+require("dotenv").config();
 
 const app: Koa = new Koa();
 
