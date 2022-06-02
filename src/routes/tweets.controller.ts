@@ -18,6 +18,8 @@ const router: Router = new Router(routerOpts);
 async function getTweet(tweetID: string | string[]) {
   let url: string = baseURL + tweetID;
 
+  console.log(tweetID)
+
   var config = {
     method: "get",
     url: url,
@@ -30,7 +32,10 @@ async function getTweet(tweetID: string | string[]) {
     .then(function (response) {
       let data = JSON.stringify(response.data);
       if (response.data.errors) {
-        return "error";
+
+        let error = response.data.errors[0]
+        return "Error: " + error.detail;
+        
       } else {
         return data;
       }
