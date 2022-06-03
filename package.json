@@ -1,5 +1,5 @@
 {
-  "name": "TwitterAnalyserApi",
+  "name": "twitter-analyzer-api",
   "description": "API that peforms data analysis and storage on Twitter tweets.",
   "author": {
     "name": "Joshua Prichard",
@@ -22,6 +22,7 @@
     "@types/koa-bodyparser": "4.3.7",
     "@types/koa-logger": "3.1.2",
     "@types/koa-router": "7.4.4",
+    "@types/natural": "^5.1.1",
     "@types/node": "16.11.33",
     "axios": "0.27.2",
     "dotenv": "16.0.0",
@@ -30,6 +31,7 @@
     "koa-bodyparser": "^4.2.1",
     "koa-logger": "^3.2.1",
     "koa-router": "^7.4.0",
+    "natural": "^5.2.2",
     "needle": "3.1.0",
     "pg": "8.7.3",
     "reflect-metadata": "0.1.13",
