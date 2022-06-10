@@ -1,100 +1,129 @@
 import * as Koa from "koa";
 import * as Router from "koa-router";
-import * as Natural from "natural"
-import *  as Http from "http-status-codes";
+import * as Natural from "natural";
+import * as Http from "http-status-codes";
 import axios from "axios";
 import { ResError, Tweet } from "../@types/twitter";
+import { RedisClientType } from "@redis/client";
 
+// Environment variables
 require("dotenv").config();
 
-const token: string = process.env.TWITTER_BEARER_TOKEN;
-
+// Router variables
 const routerOpts: Router.IRouterOptions = {
-  prefix: "/tweets"
+  prefix: "/tweets",
 };
-
-const baseURL: string = "https://api.twitter.com/2/tweets";
-
 const router: Router = new Router(routerOpts);
 
-const Analyzer = Natural.SentimentAnalyzer
-const stemmer = Natural.PorterStemmer
+// Redis
+var redisClient: RedisClientType;
 
+//Initialise sentiment analysis
+const Analyzer = Natural.SentimentAnalyzer;
+const stemmer = Natural.PorterStemmer;
+
+// Variables for the request
+const baseURL: string = "https://api.twitter.com/2/tweets";
+const token: string = process.env.TWITTER_BEARER_TOKEN;
+
+// Function for analyzing tweet sentiment
 function analyzeTweet(tweet: Tweet): Tweet {
-  var analyzer = new Analyzer("English", stemmer, "afinn")
-  var textArray = tweet.text.split(" ")
-  var sentiment = analyzer.getSentiment(textArray);
+  let analyzer = new Analyzer("English", stemmer, "afinn");
+  let textArray: string[] = tweet.text.split(" ");
+  let sentiment = analyzer.getSentiment(textArray);
   tweet.sentiment = sentiment;
+
+  //Store the tweet in redis
+  let key = String(tweet.id);
+  let value = JSON.stringify(tweet);
+
+  redisClient.set(key, value);
   return tweet;
 }
 
-// Funtion for retrieving the tweet object from
-// the Twitter Api given the Tweet ID/s
-async function getTweet(tweetID: string|string[]) {
+// Get value from redisCLient based on key
+async function queryRedis(key: string) {
+  return redisClient.get(key);
+}
 
-  let url: string;
+// Search redis for tweets
+async function searchRedis(tweets: string[]) {
+  // Instantiate the objects
+  let data: any = [];
+  let responses = [];
+  let fails = [];
 
-  // Check if the given ID string contains more than 1 ID
-  if(tweetID.includes(',')) {
-    url = baseURL.concat("?ids=")
-  } else {
-    url = baseURL.concat("/")
+  // Loop through the tweets array and check redis for them.
+  // If redis does not contain the tweet store the tweet in the
+  // fails array and check twitter for them later.
+  for (let i = 0; i < tweets.length; i++) {
+    let response = await queryRedis(tweets[i]);
+
+    if (response != null) {
+      responses.push(JSON.parse(response));
+    } else {
+      fails.push(tweets[i]);
+    }
   }
 
-  url += tweetID;
+  data = { responses: responses, fails: fails };
+
+  return data;
+}
+
+// Search twitter for tweets
+async function hitTwitter(tweets: string[]) {
+  let tweetString = "";
+
+  for (let i = 0; i < tweets.length; i++) {
+    if (i > 0) tweetString = tweetString + ",";
+    tweetString = tweetString + tweets[i];
+  }
+
+  let url: string = "https://api.twitter.com/2/tweets?ids=" + tweetString;
 
   // Request config
   var config = {
     method: "get",
     url: url,
     headers: {
-      Authorization: token
-    }
+      Authorization: token,
+    },
   };
 
-  // Async request function
   return await axios(config)
-    .then(function (response) {
-
-      let data = response.data;
-
-      if (data.errors) {
-
-        let error: ResError = response.data.errors[0]
-        return "Error: " + error.detail;
-        
-      } else {
-        // if(data.data.isArray()) {
-        //   tweetArray = data.data
-        // } else {
-        //   tweetArray[0] = data.data
-        // }
-        let res = data.data
-        if(res[0] === undefined) {
-          res = analyzeTweet(res)
-        } else {
-          for(let i = 0; i < res.length; i++) {
-            res[i] = analyzeTweet(res[i])
-          }
-        }
-        //let tweet: Tweet = analyzeTweet(res);
-        return res;
-      }
+    .then((response) => {
+      return response.data.data;
     })
-    .catch(function (error) {
-      let errorMessage:string[] = error.response.data 
-      return errorMessage;
+    .catch((err) => {
+      return err;
     });
+}
+
+async function getTweets(tweets: string[]) {
+  // Search Redis
+  let data: any = await searchRedis(tweets);
+  // Search Twitter
+  let response = []
+  if (data.fails.length > 0) response = await hitTwitter(data.fails);
+
+  //Analyze tweets from twitter and store them in redis
+  for (let i = 0; i < response.length; i++) {
+    let tweet = analyzeTweet(response[i]);
+    data.responses.push(tweet);
+  }
+  return data.responses;
 }
 
 // End point for retrieving the Tweets
 router.get("/", async (ctx: Koa.Context) => {
+  redisClient = ctx.redis;
 
-  let query:string|string[] = ctx.query.ids
+  let query: string[] = ctx.query.ids.toString().split(",");
 
-  let response = await getTweet(query);
+  let data = await getTweets(query);
 
-  ctx.body = response;
+  ctx.body = data;
 });
 
 export default router;

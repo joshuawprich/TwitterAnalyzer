@@ -3,12 +3,32 @@ import * as logger from "koa-logger";
 import * as bodyParser from "koa-bodyparser";
 import HttpStatus from "http-status-codes";
 
+// Routes for the application
 import indexController from "../routes/index.controller";
 import routeController from "../routes/tweets.controller";
+import { initRedisClient } from "../redis";
 
+// Environment variables
 require("dotenv").config();
 
+// App
 const app: Koa = new Koa();
+
+//Redis
+const redisClient = initRedisClient()
+app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
+  try {
+    ctx.redis = redisClient;
+    await next();
+  } catch (err) {
+    ctx.status =
+      err.statusCode || err.status || HttpStatus.INTERNAL_SERVER_ERROR;
+    err.status = ctx.status;
+    ctx.body = { err };
+    ctx.app.emit("error", err, ctx);
+  }
+})
+
 
 //Generic error handling
 app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
