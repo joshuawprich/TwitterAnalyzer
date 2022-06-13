@@ -3,7 +3,7 @@ import * as Router from "koa-router";
 import * as Natural from "natural";
 import * as Http from "http-status-codes";
 import axios from "axios";
-import { ResError, Tweet } from "../@types/twitter";
+import { ResError, Tweet } from "../../@types/twitter";
 import { RedisClientType } from "@redis/client";
 
 // Environment variables
@@ -11,7 +11,7 @@ require("dotenv").config();
 
 // Router variables
 const routerOpts: Router.IRouterOptions = {
-  prefix: "/tweets",
+  prefix: "/search",
 };
 const router: Router = new Router(routerOpts);
 
@@ -23,7 +23,6 @@ const Analyzer = Natural.SentimentAnalyzer;
 const stemmer = Natural.PorterStemmer;
 
 // Variables for the request
-const baseURL: string = "https://api.twitter.com/2/tweets";
 const token: string = process.env.TWITTER_BEARER_TOKEN;
 
 // Function for analyzing tweet sentiment
@@ -104,7 +103,7 @@ async function getTweets(tweets: string[]) {
   // Search Redis
   let data: any = await searchRedis(tweets);
   // Search Twitter
-  let response = []
+  let response = [];
   if (data.fails.length > 0) response = await hitTwitter(data.fails);
 
   //Analyze tweets from twitter and store them in redis

@@ -5,7 +5,7 @@ import HttpStatus from "http-status-codes";
 
 // Routes for the application
 import indexController from "../routes/index.controller";
-import routeController from "../routes/tweets.controller";
+import tweetsController from "../routes/tweets/tweets.controller";
 import { initRedisClient } from "../redis";
 
 // Environment variables
@@ -15,7 +15,7 @@ require("dotenv").config();
 const app: Koa = new Koa();
 
 //Redis
-const redisClient = initRedisClient()
+const redisClient = initRedisClient();
 app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
   try {
     ctx.redis = redisClient;
@@ -27,8 +27,7 @@ app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
     ctx.body = { err };
     ctx.app.emit("error", err, ctx);
   }
-})
-
+});
 
 //Generic error handling
 app.use(async (ctx: Koa.Context, next: () => Promise<any>) => {
@@ -49,7 +48,7 @@ app.use(bodyParser());
 // Routes
 app.use(indexController.routes());
 app.use(indexController.allowedMethods());
-app.use(routeController.routes());
-app.use(routeController.allowedMethods());
+app.use(tweetsController.routes());
+app.use(tweetsController.allowedMethods());
 
 export default app;
