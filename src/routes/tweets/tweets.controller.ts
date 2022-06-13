@@ -1,7 +1,8 @@
 import * as Koa from "koa";
 import * as Router from "koa-router";
 
-import tweetsController from "./search.controller";
+import searchController from "./search.controller";
+import streamController from "./stream.controller";
 
 // Environment variables
 require("dotenv").config();
@@ -17,7 +18,9 @@ router.get("/", async (ctx: Koa.Context) => {
   ctx.body = "/";
 });
 
-router.use(tweetsController.routes());
-router.use(tweetsController.allowedMethods());
+router.use(searchController.routes());
+router.use(searchController.allowedMethods());
+router.use(streamController.routes());
+router.use(streamController.allowedMethods());
 
 export default router;
